@@ -1,25 +1,29 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from 'src/database/PrismaService';
-import { IBook } from './book.dto';
+import { BadRequestException, ForbiddenException, Injectable } from "@nestjs/common";
+import { PrismaService } from "src/database/PrismaService";
+import { IBook } from "./book.dto";
 
 @Injectable()
 export class BookService {
   constructor(private prisma: PrismaService) {}
   async create(data: IBook) {
-    const find = await this.prisma.book.findFirst({
-      where: {
-        bar_code: data.bar_code,
-      },
-    });
+    try {
+      const find = await this.prisma.book.findFirst({
+        where: {
+          bar_code: data.bar_code,
+        },
+      });
 
-    if (find) {
-      throw new Error('Book already exists.');
+      if (find) {
+        throw new Error("Book already exists.");
+      }
+
+      const book = this.prisma.book.create({
+        data,
+      });
+      return book;
+    } catch (error) {
+      throw new ForbiddenException()
     }
-
-    const book = this.prisma.book.create({
-      data,
-    });
-    return book;
   }
 
   async getAll(): Promise<IBook[]> {
@@ -29,7 +33,7 @@ export class BookService {
   async delete(id: string) {
     const book = await this.find(id);
     if (!book) {
-      throw new Error('Book not found.');
+      throw new Error("Book not found.");
     }
     return await this.prisma.book.delete({
       where: {
@@ -48,7 +52,7 @@ export class BookService {
   async update(id: string, data: IBook): Promise<boolean> {
     const book = await this.find(id);
     if (!book) {
-      throw new Error('Book not found.');
+      throw new Error("Book not found.");
     }
     await this.prisma.book.update({
       data,
